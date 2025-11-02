@@ -143,8 +143,80 @@
         </form>
       }
 
-      <!-- Success Step -->
-      @if (step() === 'success') {
+      <!-- Success Step - Desktop Client -->
+      @if (step() === 'success' && isDesktopClient()) {
+        <div class="desktop-auth-success">
+          <!-- Primary: Automatic redirect status -->
+          <div class="desktop-status-section">
+            <mat-icon class="desktop-icon">desktop_windows</mat-icon>
+            <h2>Desktop Authentication Successful</h2>
+            <p class="status-text">Connecting to desktop app...</p>
+            <mat-spinner diameter="40"></mat-spinner>
+            <p class="help-text">
+              If the app doesn't open in 5 seconds, use the manual option below.
+            </p>
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <!-- Fallback: Manual token copy -->
+          <div class="manual-copy-section">
+            <h3>
+              <mat-icon style="vertical-align: middle;">content_paste</mat-icon>
+              Alternative: Copy Tokens Manually
+            </h3>
+            <p class="section-subtitle">
+              If your browser doesn't support automatic redirect
+            </p>
+
+            <div class="instructions-section">
+              <p class="instructions-title">How to complete authentication:</p>
+              <ol class="instructions-list">
+                <li>Click the "Copy Tokens" button below</li>
+                <li>Go back to the desktop app</li>
+                <li>Click "Browser doesn't support deep links? Paste tokens here"</li>
+                <li>Paste the tokens in the text field</li>
+                <li>Click "Sign In"</li>
+              </ol>
+            </div>
+
+            <mat-form-field appearance="outline" class="tokens-field">
+              <mat-label>Authentication Tokens (JSON)</mat-label>
+              <textarea
+                matInput
+                [value]="tokensJson()"
+                readonly
+                rows="8"
+                class="monospace-text">
+              </textarea>
+              <mat-hint>Copy this entire JSON object</mat-hint>
+            </mat-form-field>
+
+            <div class="button-row">
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="copyTokensToClipboard()"
+                class="copy-button">
+                <mat-icon style="vertical-align: middle;">content_copy</mat-icon>
+                {{ tokensCopied() ? 'Copied!' : 'Copy Tokens' }}
+              </button>
+            </div>
+
+            @if (tokensCopied()) {
+              <mat-chip-set class="success-chips">
+                <mat-chip highlighted>
+                  <mat-icon style="vertical-align: middle;">check_circle</mat-icon>
+                  Tokens copied successfully!
+                </mat-chip>
+              </mat-chip-set>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Success Step - Normal Web Flow -->
+      @if (step() === 'success' && !isDesktopClient()) {
         <div class="success-content">
           <mat-icon class="success-icon">check_circle</mat-icon>
           <h2>Authentication Successful!</h2>

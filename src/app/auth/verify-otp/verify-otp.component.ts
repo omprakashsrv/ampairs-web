@@ -1,5 +1,5 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {Router} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatCardModule} from '@angular/material/card';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -8,6 +8,8 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
+import {MatChipsModule} from '@angular/material/chips';
+import {MatDividerModule} from '@angular/material/divider';
 import {CommonModule} from '@angular/common';
 import {interval, Subscription} from 'rxjs';
 import {take} from 'rxjs/operators';
@@ -27,7 +29,9 @@ import {environment} from '../../../environments/environment';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatChipsModule,
+    MatDividerModule
   ],
   templateUrl: './verify-otp.component.html',
   styleUrl: './verify-otp.component.scss'
@@ -42,10 +46,19 @@ export class VerifyOtpComponent implements OnInit, OnDestroy {
   private sessionId = '';
   private timerSubscription?: Subscription;
 
+  // Desktop client authentication
+  isDesktopClient = false;
+  authSuccess = false;
+  tokensJson = '';
+  tokensCopied = false;
+  private accessToken = '';
+  private refreshToken = '';
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
+    private route: ActivatedRoute,
     private snackBar: MatSnackBar,
     private recaptchaV3Service: ReCaptchaV3Service
   ) {
@@ -60,6 +73,12 @@ export class VerifyOtpComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Detect desktop client
+    this.route.queryParams.subscribe(params => {
+      this.isDesktopClient = params['client'] === 'desktop';
+      console.log('Desktop client detected:', this.isDesktopClient);
+    });
+
     // Get session data
     this.sessionId = sessionStorage.getItem('auth_session_id') || '';
     const mobileNumber = sessionStorage.getItem('mobile_number') || '';
@@ -169,9 +188,19 @@ export class VerifyOtpComponent implements OnInit, OnDestroy {
       this.isLoading = false;
       this.otpForm.get('otp')?.enable();
       if (response && response.access_token && response.refresh_token) {
+        // Store tokens for desktop auth
+        this.accessToken = response.access_token;
+        this.refreshToken = response.refresh_token;
+
         // Clear session storage
         sessionStorage.removeItem('auth_session_id');
         sessionStorage.removeItem('mobile_number');
+
+        // Handle desktop client authentication
+        if (this.isDesktopClient) {
+          this.handleDesktopAuth();
+          return;
+        }
 
         this.snackBar.open('Login successful!', 'Close', {
           duration: 3000,
@@ -290,5 +319,105 @@ export class VerifyOtpComponent implements OnInit, OnDestroy {
       duration: 5000,
       panelClass: ['error-snackbar']
     });
+  }
+
+  /**
+   * Handle desktop authentication completion
+   */
+  private handleDesktopAuth(): void {
+    this.authSuccess = true;
+
+    // Generate JSON for manual copy
+    this.tokensJson = JSON.stringify({
+      access_token: this.accessToken,
+      refresh_token: this.refreshToken
+    }, null, 2);
+
+    // Attempt automatic deep link
+    this.attemptDeepLink();
+
+    this.snackBar.open('Authentication successful! Connecting to desktop app...', 'Close', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
+    });
+  }
+
+  /**
+   * Attempt to open desktop app via deep link
+   */
+  private attemptDeepLink(): void {
+    const deepLinkUrl = `ampairs://auth?access_token=${encodeURIComponent(this.accessToken)}&refresh_token=${encodeURIComponent(this.refreshToken)}`;
+
+    try {
+      window.location.href = deepLinkUrl;
+      console.log('Desktop deep link triggered:', deepLinkUrl);
+    } catch (error) {
+      console.error('Failed to trigger deep link:', error);
+      // Fallback UI is already visible
+    }
+  }
+
+  /**
+   * Copy tokens to clipboard
+   */
+  copyTokensToClipboard(): void {
+    if (!navigator.clipboard) {
+      // Fallback for older browsers
+      this.copyToClipboardFallback(this.tokensJson);
+      return;
+    }
+
+    navigator.clipboard.writeText(this.tokensJson)
+      .then(() => {
+        this.tokensCopied = true;
+        this.snackBar.open('Tokens copied! Paste them in the desktop app.', 'OK', {
+          duration: 5000,
+          panelClass: ['success-snackbar']
+        });
+
+        // Reset copied state after 5 seconds
+        setTimeout(() => this.tokensCopied = false, 5000);
+      })
+      .catch(err => {
+        console.error('Failed to copy tokens:', err);
+        this.snackBar.open('Failed to copy. Please select and copy manually.', 'OK', {
+          duration: 3000,
+          panelClass: ['error-snackbar']
+        });
+      });
+  }
+
+  /**
+   * Fallback method for copying to clipboard in older browsers
+   */
+  private copyToClipboardFallback(text: string): void {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.select();
+
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        this.tokensCopied = true;
+        this.snackBar.open('Tokens copied! Paste them in the desktop app.', 'OK', {
+          duration: 5000,
+          panelClass: ['success-snackbar']
+        });
+        setTimeout(() => this.tokensCopied = false, 5000);
+      } else {
+        throw new Error('Copy command failed');
+      }
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+      this.snackBar.open('Failed to copy. Please select and copy manually.', 'OK', {
+        duration: 3000,
+        panelClass: ['error-snackbar']
+      });
+    } finally {
+      document.body.removeChild(textArea);
+    }
   }
 }

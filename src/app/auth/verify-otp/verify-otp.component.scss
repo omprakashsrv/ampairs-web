@@ -84,6 +84,100 @@
   text-align: center;
 }
 
+/* Desktop authentication UI */
+.desktop-auth-container {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: vars.$spacing-xl;
+}
+
+.desktop-auth-card {
+  .desktop-icon {
+    color: vars.$color-primary;
+  }
+
+  .status-section {
+    @include theme.flex-column;
+    align-items: center;
+    gap: vars.$spacing-lg;
+    padding: vars.$spacing-xl;
+    text-align: center;
+
+    mat-spinner {
+      margin: 0 auto;
+    }
+
+    .status-text {
+      font: vars.$font-body-large;
+      color: vars.$color-on-surface;
+      margin: 0;
+    }
+
+    .help-text {
+      font: vars.$font-body-medium;
+      color: vars.$color-on-surface-variant;
+      margin: 0;
+    }
+  }
+}
+
+.manual-copy-card {
+  .instructions-section {
+    margin-bottom: vars.$spacing-lg;
+
+    .instructions-title {
+      font: vars.$font-label-large;
+      color: vars.$color-on-surface;
+      margin-bottom: vars.$spacing-md;
+    }
+
+    .instructions-list {
+      padding-left: vars.$spacing-xl;
+      margin: 0;
+
+      li {
+        font: vars.$font-body-medium;
+        color: vars.$color-on-surface-variant;
+        margin-bottom: vars.$spacing-sm;
+        line-height: 1.5;
+      }
+    }
+  }
+
+  .tokens-field {
+    width: 100%;
+    margin-bottom: vars.$spacing-lg;
+
+    .monospace-text {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      color: vars.$color-on-surface;
+    }
+  }
+
+  .button-row {
+    display: flex;
+    gap: vars.$spacing-md;
+    margin-bottom: vars.$spacing-md;
+
+    .copy-button {
+      flex: 1;
+    }
+  }
+
+  .success-chips {
+    margin-top: vars.$spacing-md;
+
+    mat-chip {
+      background-color: vars.$color-success;
+      color: white;
+    }
+  }
+}
+
 /* M3 Responsive design */
 @include theme.mobile {
   .auth-container {
@@ -99,4 +193,26 @@
     letter-spacing: vars.$spacing-sm;
   }
 
+  .desktop-auth-container {
+    max-width: 100%;
+    gap: vars.$spacing-lg;
+  }
+
+  .manual-copy-card {
+    .instructions-section {
+      .instructions-list {
+        padding-left: vars.$spacing-lg;
+
+        li {
+          font: vars.$font-body-small;
+        }
+      }
+    }
+
+    .tokens-field {
+      .monospace-text {
+        font-size: 10px;
+      }
+    }
+  }
 }

@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -9,6 +10,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatDividerModule } from '@angular/material/divider';
 import { FirebaseAuthService } from '../../core/services/firebase-auth.service';
 import { AuthService } from '../../core/services/auth.service';
 import { DeviceService } from '../../core/services/device.service';
@@ -27,7 +30,9 @@ import { environment } from '../../../environments/environment';
     MatSelectModule,
     MatProgressSpinnerModule,
     MatIconModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatChipsModule,
+    MatDividerModule
   ],
   templateUrl: './firebase-auth.component.html',
   styleUrl: './firebase-auth.component.scss'
@@ -40,10 +45,18 @@ export class FirebaseAuthComponent implements OnInit, OnDestroy {
   countdown = signal(0);
   maskedPhone = signal('');
 
+  // Desktop client authentication
+  isDesktopClient = signal(false);
+  tokensJson = signal('');
+  tokensCopied = signal(false);
+  private accessToken = '';
+  private refreshToken = '';
+
   private countdownInterval: any;
 
   constructor(
     private fb: FormBuilder,
+    private route: ActivatedRoute,
     private firebaseAuth: FirebaseAuthService,
     private authService: AuthService,
     private deviceService: DeviceService,
@@ -67,6 +80,12 @@ export class FirebaseAuthComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Detect desktop client from query parameter
+    this.route.queryParams.subscribe(params => {
+      this.isDesktopClient.set(params['client'] === 'desktop');
+      console.log('Desktop client detected:', this.isDesktopClient());
+    });
+
     // Initialize reCAPTCHA after view is ready
     setTimeout(() => {
       this.firebaseAuth.initRecaptcha('recaptcha-container');
@@ -125,8 +144,19 @@ export class FirebaseAuthComponent implements OnInit, OnDestroy {
         user_agent: deviceInfo.user_agent
       });
 
+      // Store tokens for desktop auth
+      this.accessToken = authResponse.access_token;
+      this.refreshToken = authResponse.refresh_token;
+
       // Step 3: Redirect based on platform
       this.step.set('success');
+
+      // Handle desktop client authentication (browser-based)
+      if (this.isDesktopClient()) {
+        this.handleDesktopAuth();
+        return;
+      }
+
       this.showMessage('Authentication successful!');
       this.redirectToDesktopApp(authResponse.access_token, authResponse.refresh_token);
     } catch (error: any) {
@@ -232,5 +262,90 @@ export class FirebaseAuthComponent implements OnInit, OnDestroy {
   // Getter for template access
   get firebaseAuthService() {
     return this.firebaseAuth;
+  }
+
+  /**
+   * Handle desktop authentication completion (browser-based flow)
+   */
+  private handleDesktopAuth(): void {
+    // Generate JSON for manual copy
+    this.tokensJson.set(JSON.stringify({
+      access_token: this.accessToken,
+      refresh_token: this.refreshToken
+    }, null, 2));
+
+    // Attempt automatic deep link
+    this.attemptDeepLink();
+
+    this.showMessage('Authentication successful! Connecting to desktop app...');
+  }
+
+  /**
+   * Attempt to open desktop app via deep link (browser-based flow)
+   */
+  private attemptDeepLink(): void {
+    const deepLinkUrl = `ampairs://auth?access_token=${encodeURIComponent(this.accessToken)}&refresh_token=${encodeURIComponent(this.refreshToken)}`;
+
+    try {
+      window.location.href = deepLinkUrl;
+      console.log('Desktop deep link triggered:', deepLinkUrl);
+    } catch (error) {
+      console.error('Failed to trigger deep link:', error);
+      // Fallback UI is already visible
+    }
+  }
+
+  /**
+   * Copy tokens to clipboard (for desktop client)
+   */
+  copyTokensToClipboard(): void {
+    const tokensText = this.tokensJson();
+
+    if (!navigator.clipboard) {
+      // Fallback for older browsers
+      this.copyToClipboardFallback(tokensText);
+      return;
+    }
+
+    navigator.clipboard.writeText(tokensText)
+      .then(() => {
+        this.tokensCopied.set(true);
+        this.showMessage('Tokens copied! Paste them in the desktop app.');
+
+        // Reset copied state after 5 seconds
+        setTimeout(() => this.tokensCopied.set(false), 5000);
+      })
+      .catch(err => {
+        console.error('Failed to copy tokens:', err);
+        this.showMessage('Failed to copy. Please select and copy manually.', 'error');
+      });
+  }
+
+  /**
+   * Fallback method for copying to clipboard in older browsers
+   */
+  private copyToClipboardFallback(text: string): void {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.select();
+
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        this.tokensCopied.set(true);
+        this.showMessage('Tokens copied! Paste them in the desktop app.');
+        setTimeout(() => this.tokensCopied.set(false), 5000);
+      } else {
+        throw new Error('Copy command failed');
+      }
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+      this.showMessage('Failed to copy. Please select and copy manually.', 'error');
+    } finally {
+      document.body.removeChild(textArea);
+    }
   }
 }

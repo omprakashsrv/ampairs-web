@@ -170,6 +170,128 @@
           margin: 0;
         }
       }
+
+      /* Desktop authentication UI */
+      .desktop-auth-success {
+        display: flex;
+        flex-direction: column;
+        gap: vars.$spacing-xl;
+
+        .desktop-status-section {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: vars.$spacing-lg;
+          padding: vars.$spacing-xl;
+          text-align: center;
+
+          .desktop-icon {
+            font-size: 64px;
+            width: 64px;
+            height: 64px;
+            color: vars.$color-primary;
+          }
+
+          h2 {
+            font: vars.$font-headline-small;
+            color: vars.$color-on-surface;
+            margin: 0;
+          }
+
+          .status-text {
+            font: vars.$font-body-large;
+            color: vars.$color-on-surface;
+            margin: 0;
+          }
+
+          mat-spinner {
+            margin: vars.$spacing-md 0;
+          }
+
+          .help-text {
+            font: vars.$font-body-medium;
+            color: vars.$color-on-surface-variant;
+            margin: 0;
+          }
+        }
+
+        .manual-copy-section {
+          display: flex;
+          flex-direction: column;
+          gap: vars.$spacing-lg;
+          padding: vars.$spacing-lg;
+
+          h3 {
+            font: vars.$font-title-large;
+            color: vars.$color-on-surface;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: vars.$spacing-sm;
+          }
+
+          .section-subtitle {
+            font: vars.$font-body-medium;
+            color: vars.$color-on-surface-variant;
+            margin: 0;
+          }
+
+          .instructions-section {
+            margin-top: vars.$spacing-md;
+
+            .instructions-title {
+              font: vars.$font-label-large;
+              color: vars.$color-on-surface;
+              margin-bottom: vars.$spacing-md;
+            }
+
+            .instructions-list {
+              padding-left: vars.$spacing-xl;
+              margin: 0;
+
+              li {
+                font: vars.$font-body-medium;
+                color: vars.$color-on-surface-variant;
+                margin-bottom: vars.$spacing-sm;
+                line-height: 1.5;
+              }
+            }
+          }
+
+          .tokens-field {
+            width: 100%;
+            margin-top: vars.$spacing-lg;
+
+            .monospace-text {
+              font-family: 'Courier New', Courier, monospace;
+              font-size: 12px;
+              line-height: 1.5;
+              color: vars.$color-on-surface;
+            }
+          }
+
+          .button-row {
+            display: flex;
+            gap: vars.$spacing-md;
+            margin-top: vars.$spacing-md;
+
+            .copy-button {
+              flex: 1;
+              height: 48px;
+              font: vars.$font-label-large;
+            }
+          }
+
+          .success-chips {
+            margin-top: vars.$spacing-md;
+
+            mat-chip {
+              background-color: vars.$color-success;
+              color: white;
+            }
+          }
+        }
+      }
     }
   }
 
@@ -218,6 +340,38 @@
 
       mat-card-content {
         padding: vars.$spacing-lg;
+
+        .desktop-auth-success {
+          .desktop-status-section {
+            padding: vars.$spacing-md;
+
+            .desktop-icon {
+              font-size: 48px;
+              width: 48px;
+              height: 48px;
+            }
+          }
+
+          .manual-copy-section {
+            padding: vars.$spacing-md;
+
+            .instructions-section {
+              .instructions-list {
+                padding-left: vars.$spacing-lg;
+
+                li {
+                  font: vars.$font-body-small;
+                }
+              }
+            }
+
+            .tokens-field {
+              .monospace-text {
+                font-size: 10px;
+              }
+            }
+          }
+        }
       }
     }
 
