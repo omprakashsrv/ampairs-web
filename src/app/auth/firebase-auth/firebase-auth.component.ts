@@ -1,6 +1,5 @@
 import {Component, computed, inject, OnDestroy, OnInit, signal} from '@angular/core';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {ActivatedRoute} from '@angular/router';
 import {MatCardModule} from '@angular/material/card';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
@@ -44,7 +43,6 @@ type AuthStep = 'phone' | 'otp' | 'success';
 })
 export class FirebaseAuthComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
-  private readonly route = inject(ActivatedRoute);
   private readonly firebaseAuth = inject(FirebaseAuthService);
   private readonly authService = inject(AuthService);
   private readonly deviceService = inject(DeviceService);
@@ -67,8 +65,7 @@ export class FirebaseAuthComponent implements OnInit, OnDestroy {
   readonly countdown = signal(0);
   readonly maskedPhone = signal('');
 
-  // Desktop / app token handoff
-  readonly isDesktopClient = signal(false);
+  // App token handoff
   readonly tokensJson = signal('');
   readonly tokensCopied = signal(false);
   private accessToken = '';
@@ -89,10 +86,6 @@ export class FirebaseAuthComponent implements OnInit, OnDestroy {
   private countdownInterval: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(params => {
-      this.isDesktopClient.set(params['client'] === 'desktop');
-    });
-
     // Initialise reCAPTCHA once the container is in the DOM.
     setTimeout(() => this.firebaseAuth.initRecaptcha('recaptcha-container'), 100);
   }

@@ -1,9 +1,7 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {signal, WritableSignal} from '@angular/core';
-import {ActivatedRoute} from '@angular/router';
 import {provideNoopAnimations} from '@angular/platform-browser/animations';
 import {provideTranslateService} from '@ngx-translate/core';
-import {of} from 'rxjs';
 
 import {FirebaseAuthComponent} from './firebase-auth.component';
 import {FirebaseAuthService} from '../../core/services/firebase-auth.service';
@@ -77,8 +75,7 @@ describe('FirebaseAuthComponent', () => {
         {provide: AuthService, useValue: new FakeAuthService()},
         {provide: DeviceService, useValue: new FakeDeviceService()},
         {provide: LanguageService, useValue: language},
-        {provide: ThemeService, useValue: theme},
-        {provide: ActivatedRoute, useValue: {queryParams: of({})}}
+        {provide: ThemeService, useValue: theme}
       ]
     }).compileComponents();
 
