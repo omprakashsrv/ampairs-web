@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { initializeApp, FirebaseApp } from 'firebase/app';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import {
   getAuth,
   Auth,
@@ -24,8 +24,9 @@ export class FirebaseAuthService {
   error = signal<string | null>(null);
 
   constructor() {
-    // Initialize Firebase
-    this.app = initializeApp(environment.firebase);
+    // Reuse the existing Firebase app if one is already initialised
+    // (avoids duplicate-app errors under HMR and in unit tests).
+    this.app = getApps().length ? getApp() : initializeApp(environment.firebase);
     this.auth = getAuth(this.app);
   }
 
