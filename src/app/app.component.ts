@@ -1,23 +1,21 @@
-import {Component, inject, OnInit} from '@angular/core';
+import {Component, inject} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
 import {ThemeService} from './core/services/theme.service';
+import {LanguageService} from './core/services/language.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet],
   template: `
-        <router-outlet></router-outlet>`,
+    <router-outlet></router-outlet>`,
   styles: []
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   title = 'ampairs-web';
 
-  // Inject ThemeService to ensure it initializes when the app starts
-  private themeService = inject(ThemeService);
-
-  ngOnInit(): void {
-    // The ThemeService constructor and initializeTheme() will be called automatically
-    // when the service is injected, ensuring themes are applied before any component renders
-  }
+  // Eagerly initialise theme and language so they are applied before any
+  // component renders (both run their setup in their constructors).
+  private readonly themeService = inject(ThemeService);
+  private readonly languageService = inject(LanguageService);
 }
