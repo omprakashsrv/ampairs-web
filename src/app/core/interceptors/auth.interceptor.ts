@@ -18,7 +18,7 @@ import Cookies from 'js-cookie';
 export class AuthInterceptor implements HttpInterceptor {
   private isRefreshing = false;
   private refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
-  private readonly AUTH_API_URL = `${environment.apiBaseUrl}/auth/v1`;
+  private readonly AUTH_API_URL = `${environment.apiBaseUrl}/api/auth/v1`;
 
   constructor(
     private injector: Injector,

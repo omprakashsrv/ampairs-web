@@ -87,8 +87,8 @@ export interface DeviceSession {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly AUTH_API_URL = `${environment.apiBaseUrl}/auth/v1`;
-  private readonly USER_API_URL = `${environment.apiBaseUrl}/user/v1`;
+  private readonly AUTH_API_URL = `${environment.apiBaseUrl}/api/auth/v1`;
+  private readonly USER_API_URL = `${environment.apiBaseUrl}/api/user/v1`;
 
   // Modern dependency injection
   private http = inject(HttpClient);
