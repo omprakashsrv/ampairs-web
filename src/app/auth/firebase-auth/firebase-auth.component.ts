@@ -1,95 +1,100 @@
-import { Component, OnInit, OnDestroy, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatSelectModule } from '@angular/material/select';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatDividerModule } from '@angular/material/divider';
-import { FirebaseAuthService } from '../../core/services/firebase-auth.service';
-import { AuthService } from '../../core/services/auth.service';
-import { DeviceService } from '../../core/services/device.service';
-import { environment } from '../../../environments/environment';
+import {Component, computed, inject, OnDestroy, OnInit, signal} from '@angular/core';
+import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {ActivatedRoute} from '@angular/router';
+import {MatCardModule} from '@angular/material/card';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInputModule} from '@angular/material/input';
+import {MatButtonModule} from '@angular/material/button';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {MatIconModule} from '@angular/material/icon';
+import {MatMenuModule} from '@angular/material/menu';
+import {MatTooltipModule} from '@angular/material/tooltip';
+import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
+import {MatDividerModule} from '@angular/material/divider';
+import {TranslatePipe, TranslateService} from '@ngx-translate/core';
+
+import {FirebaseAuthService} from '../../core/services/firebase-auth.service';
+import {AuthService} from '../../core/services/auth.service';
+import {DeviceService} from '../../core/services/device.service';
+import {LanguageService} from '../../core/services/language.service';
+import {ThemeService} from '../../core/services/theme.service';
+import {environment} from '../../../environments/environment';
+
+type AuthStep = 'phone' | 'otp' | 'success';
 
 @Component({
   selector: 'app-firebase-auth',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatSelectModule,
     MatProgressSpinnerModule,
     MatIconModule,
+    MatMenuModule,
+    MatTooltipModule,
     MatSnackBarModule,
-    MatChipsModule,
-    MatDividerModule
+    MatDividerModule,
+    TranslatePipe
   ],
   templateUrl: './firebase-auth.component.html',
   styleUrl: './firebase-auth.component.scss'
 })
 export class FirebaseAuthComponent implements OnInit, OnDestroy {
-  phoneForm: FormGroup;
-  otpForm: FormGroup;
+  private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
+  private readonly firebaseAuth = inject(FirebaseAuthService);
+  private readonly authService = inject(AuthService);
+  private readonly deviceService = inject(DeviceService);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly translate = inject(TranslateService);
+  readonly language = inject(LanguageService);
+  readonly theme = inject(ThemeService);
 
-  step = signal<'phone' | 'otp' | 'success'>('phone');
-  countdown = signal(0);
-  maskedPhone = signal('');
+  readonly phoneForm: FormGroup = this.fb.group({
+    // Fixed to India (+91) for now.
+    countryCode: [91],
+    phone: ['', [Validators.required, Validators.pattern('^[6-9][0-9]{9}$')]]
+  });
 
-  // Desktop client authentication
-  isDesktopClient = signal(false);
-  tokensJson = signal('');
-  tokensCopied = signal(false);
+  readonly otpForm: FormGroup = this.fb.group({
+    otp: ['', [Validators.required, Validators.pattern('^[0-9]{6}$')]]
+  });
+
+  readonly step = signal<AuthStep>('phone');
+  readonly countdown = signal(0);
+  readonly maskedPhone = signal('');
+
+  // Desktop / app token handoff
+  readonly isDesktopClient = signal(false);
+  readonly tokensJson = signal('');
+  readonly tokensCopied = signal(false);
   private accessToken = '';
   private refreshToken = '';
 
-  private countdownInterval: any;
+  // Theme toggle icon reflects the current mode (system / light / dark).
+  readonly themeIcon = computed(() => {
+    switch (this.theme.themeMode()) {
+      case 'light':
+        return 'light_mode';
+      case 'dark':
+        return 'dark_mode';
+      default:
+        return 'brightness_auto';
+    }
+  });
 
-  constructor(
-    private fb: FormBuilder,
-    private route: ActivatedRoute,
-    private firebaseAuth: FirebaseAuthService,
-    private authService: AuthService,
-    private deviceService: DeviceService,
-    private snackBar: MatSnackBar
-  ) {
-    // Fixed to India only (+91)
-    this.phoneForm = this.fb.group({
-      countryCode: [91],
-      phone: ['', [
-        Validators.required,
-        Validators.pattern('^[6-9][0-9]{9}$')
-      ]]
-    });
-
-    this.otpForm = this.fb.group({
-      otp: ['', [
-        Validators.required,
-        Validators.pattern('^[0-9]{6}$')
-      ]]
-    });
-  }
+  private countdownInterval: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit(): void {
-    // Detect desktop client from query parameter
     this.route.queryParams.subscribe(params => {
       this.isDesktopClient.set(params['client'] === 'desktop');
-      console.log('Desktop client detected:', this.isDesktopClient());
     });
 
-    // Initialize reCAPTCHA after view is ready
-    setTimeout(() => {
-      this.firebaseAuth.initRecaptcha('recaptcha-container');
-    }, 100);
+    // Initialise reCAPTCHA once the container is in the DOM.
+    setTimeout(() => this.firebaseAuth.initRecaptcha('recaptcha-container'), 100);
   }
 
   ngOnDestroy(): void {
@@ -97,12 +102,24 @@ export class FirebaseAuthComponent implements OnInit, OnDestroy {
     this.firebaseAuth.resetRecaptcha();
   }
 
+  get firebaseAuthService(): FirebaseAuthService {
+    return this.firebaseAuth;
+  }
+
+  switchLanguage(code: string): void {
+    this.language.use(code);
+  }
+
+  cycleTheme(): void {
+    this.theme.toggleTheme();
+  }
+
   async onSendOTP(): Promise<void> {
     if (this.phoneForm.invalid) {
       return;
     }
 
-    const { countryCode, phone } = this.phoneForm.value;
+    const {countryCode, phone} = this.phoneForm.value;
     const fullPhoneNumber = `+${countryCode}${phone}`;
 
     try {
@@ -110,9 +127,9 @@ export class FirebaseAuthComponent implements OnInit, OnDestroy {
       this.maskedPhone.set(this.maskPhoneNumber(phone));
       this.step.set('otp');
       this.startCountdown(30);
-      this.showMessage('OTP sent successfully');
-    } catch (error: any) {
-      this.showMessage(error.message || 'Failed to send OTP', 'error');
+      this.showMessage(this.translate.instant('auth.messages.otpSent'));
+    } catch {
+      this.showMessage(this.translate.instant('auth.messages.otpSendFailed'), 'error');
     }
   }
 
@@ -121,15 +138,15 @@ export class FirebaseAuthComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const { otp } = this.otpForm.value;
+    const {otp} = this.otpForm.value;
 
     try {
-      // Step 1: Verify OTP with Firebase and get Firebase ID token
+      // 1. Verify OTP with Firebase to obtain a Firebase ID token.
       const firebaseToken = await this.firebaseAuth.verifyOTP(otp);
 
-      // Step 2: Exchange Firebase token for backend JWT tokens
-      const { countryCode, phone } = this.phoneForm.value;
-      const deviceInfo = await this.deviceService.getDeviceInfo();
+      // 2. Exchange the Firebase token for backend JWT tokens.
+      const {countryCode, phone} = this.phoneForm.value;
+      const deviceInfo = this.deviceService.getDeviceInfo();
 
       const authResponse = await this.authService.authenticateWithFirebase({
         firebase_id_token: firebaseToken,
@@ -144,23 +161,15 @@ export class FirebaseAuthComponent implements OnInit, OnDestroy {
         user_agent: deviceInfo.user_agent
       });
 
-      // Store tokens for desktop auth
       this.accessToken = authResponse.access_token;
       this.refreshToken = authResponse.refresh_token;
 
-      // Step 3: Redirect based on platform
+      // 3. Show success and hand the tokens off to the app.
       this.step.set('success');
-
-      // Handle desktop client authentication (browser-based)
-      if (this.isDesktopClient()) {
-        this.handleDesktopAuth();
-        return;
-      }
-
-      this.showMessage('Authentication successful!');
-      this.redirectToDesktopApp(authResponse.access_token, authResponse.refresh_token);
-    } catch (error: any) {
-      this.showMessage(error.message || 'Invalid OTP code', 'error');
+      this.prepareTokenHandoff();
+      this.showMessage(this.translate.instant('auth.messages.authSuccess'));
+    } catch {
+      this.showMessage(this.translate.instant('auth.messages.invalidOtp'), 'error');
     }
   }
 
@@ -169,12 +178,8 @@ export class FirebaseAuthComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Reset and reinitialize reCAPTCHA
     this.firebaseAuth.resetRecaptcha();
-    setTimeout(() => {
-      this.firebaseAuth.initRecaptcha('recaptcha-container');
-    }, 100);
-
+    setTimeout(() => this.firebaseAuth.initRecaptcha('recaptcha-container'), 100);
     await this.onSendOTP();
   }
 
@@ -184,41 +189,73 @@ export class FirebaseAuthComponent implements OnInit, OnDestroy {
     this.clearCountdown();
   }
 
-  private redirectToDesktopApp(accessToken: string, refreshToken: string): void {
-    // Check if we're in a desktop app context or web browser
-    const isDesktopApp = this.isRunningInDesktopApp();
+  openApp(): void {
+    this.attemptDeepLink();
+  }
 
-    if (isDesktopApp) {
-      // Try deep link for desktop app
-      const { scheme, host } = environment.deepLink;
-      const deepLink = `${scheme}://${host}?access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}`;
+  copyTokens(): void {
+    const text = this.tokensJson();
 
-      try {
-        window.location.href = deepLink;
-      } catch (error) {
-        console.error('Failed to open deep link:', error);
-        this.redirectToWorkspaces();
-      }
-    } else {
-      // For web browsers, redirect to workspaces page
-      // Tokens are already stored by authService
-      this.redirectToWorkspaces();
+    if (!navigator.clipboard) {
+      this.copyToClipboardFallback(text);
+      return;
+    }
+
+    navigator.clipboard.writeText(text)
+      .then(() => this.markCopied())
+      .catch(() => this.showMessage(this.translate.instant('auth.messages.copyFailed'), 'error'));
+  }
+
+  // --- helpers -------------------------------------------------------------
+
+  private prepareTokenHandoff(): void {
+    this.tokensJson.set(JSON.stringify({
+      access_token: this.accessToken,
+      refresh_token: this.refreshToken
+    }, null, 2));
+
+    // Best-effort automatic deep link into the desktop/native app.
+    this.attemptDeepLink();
+  }
+
+  private attemptDeepLink(): void {
+    const {scheme, host} = environment.deepLink;
+    const deepLink =
+      `${scheme}://${host}?access_token=${encodeURIComponent(this.accessToken)}` +
+      `&refresh_token=${encodeURIComponent(this.refreshToken)}`;
+
+    try {
+      window.location.href = deepLink;
+    } catch (error) {
+      console.error('Failed to open deep link:', error);
     }
   }
 
-  private isRunningInDesktopApp(): boolean {
-    // Check if running in Electron or other desktop wrapper
-    const userAgent = navigator.userAgent.toLowerCase();
-    return userAgent.includes('electron') ||
-           userAgent.includes('ampairs-desktop') ||
-           (window as any).isDesktopApp === true;
+  private markCopied(): void {
+    this.tokensCopied.set(true);
+    this.showMessage(this.translate.instant('auth.messages.tokensCopied'));
+    setTimeout(() => this.tokensCopied.set(false), 5000);
   }
 
-  private redirectToWorkspaces(): void {
-    // Use Angular router for navigation
-    setTimeout(() => {
-      window.location.href = '/workspaces';
-    }, 1500);
+  private copyToClipboardFallback(text: string): void {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.select();
+
+    try {
+      if (document.execCommand('copy')) {
+        this.markCopied();
+      } else {
+        throw new Error('Copy command failed');
+      }
+    } catch {
+      this.showMessage(this.translate.instant('auth.messages.copyFailed'), 'error');
+    } finally {
+      document.body.removeChild(textArea);
+    }
   }
 
   private maskPhoneNumber(phone: string): string {
@@ -226,8 +263,7 @@ export class FirebaseAuthComponent implements OnInit, OnDestroy {
       return phone;
     }
     const lastFour = phone.slice(-4);
-    const masked = '*'.repeat(phone.length - 4);
-    return masked + lastFour;
+    return '•'.repeat(phone.length - 4) + lastFour;
   }
 
   private startCountdown(seconds: number): void {
@@ -251,101 +287,11 @@ export class FirebaseAuthComponent implements OnInit, OnDestroy {
   }
 
   private showMessage(message: string, type: 'success' | 'error' = 'success'): void {
-    this.snackBar.open(message, 'Close', {
+    this.snackBar.open(message, this.translate.instant('common.close'), {
       duration: 5000,
       horizontalPosition: 'center',
       verticalPosition: 'top',
       panelClass: type === 'error' ? ['error-snackbar'] : ['success-snackbar']
     });
-  }
-
-  // Getter for template access
-  get firebaseAuthService() {
-    return this.firebaseAuth;
-  }
-
-  /**
-   * Handle desktop authentication completion (browser-based flow)
-   */
-  private handleDesktopAuth(): void {
-    // Generate JSON for manual copy
-    this.tokensJson.set(JSON.stringify({
-      access_token: this.accessToken,
-      refresh_token: this.refreshToken
-    }, null, 2));
-
-    // Attempt automatic deep link
-    this.attemptDeepLink();
-
-    this.showMessage('Authentication successful! Connecting to desktop app...');
-  }
-
-  /**
-   * Attempt to open desktop app via deep link (browser-based flow)
-   */
-  private attemptDeepLink(): void {
-    const deepLinkUrl = `ampairs://auth?access_token=${encodeURIComponent(this.accessToken)}&refresh_token=${encodeURIComponent(this.refreshToken)}`;
-
-    try {
-      window.location.href = deepLinkUrl;
-      console.log('Desktop deep link triggered:', deepLinkUrl);
-    } catch (error) {
-      console.error('Failed to trigger deep link:', error);
-      // Fallback UI is already visible
-    }
-  }
-
-  /**
-   * Copy tokens to clipboard (for desktop client)
-   */
-  copyTokensToClipboard(): void {
-    const tokensText = this.tokensJson();
-
-    if (!navigator.clipboard) {
-      // Fallback for older browsers
-      this.copyToClipboardFallback(tokensText);
-      return;
-    }
-
-    navigator.clipboard.writeText(tokensText)
-      .then(() => {
-        this.tokensCopied.set(true);
-        this.showMessage('Tokens copied! Paste them in the desktop app.');
-
-        // Reset copied state after 5 seconds
-        setTimeout(() => this.tokensCopied.set(false), 5000);
-      })
-      .catch(err => {
-        console.error('Failed to copy tokens:', err);
-        this.showMessage('Failed to copy. Please select and copy manually.', 'error');
-      });
-  }
-
-  /**
-   * Fallback method for copying to clipboard in older browsers
-   */
-  private copyToClipboardFallback(text: string): void {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    textArea.style.position = 'fixed';
-    textArea.style.left = '-999999px';
-    document.body.appendChild(textArea);
-    textArea.select();
-
-    try {
-      const successful = document.execCommand('copy');
-      if (successful) {
-        this.tokensCopied.set(true);
-        this.showMessage('Tokens copied! Paste them in the desktop app.');
-        setTimeout(() => this.tokensCopied.set(false), 5000);
-      } else {
-        throw new Error('Copy command failed');
-      }
-    } catch (err) {
-      console.error('Fallback copy failed:', err);
-      this.showMessage('Failed to copy. Please select and copy manually.', 'error');
-    } finally {
-      document.body.removeChild(textArea);
-    }
   }
 }

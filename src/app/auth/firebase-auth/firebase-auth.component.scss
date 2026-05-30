@@ -1,395 +1,261 @@
 @use '../../../theme/variables' as vars;
 @use '../../../theme/mixins' as theme;
 
-.firebase-auth-container {
-  min-height: 100vh;
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
+.auth-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background:
+    radial-gradient(120% 120% at 100% 0%, vars.$color-primary-container 0%, transparent 45%),
+    radial-gradient(120% 120% at 0% 100%, vars.$color-tertiary-container 0%, transparent 45%),
+    vars.$color-background;
+}
+
+// ---- Top bar -------------------------------------------------------------
+.auth-topbar {
+  @include theme.flex-between;
+  align-items: center;
+  padding: vars.$spacing-lg vars.$spacing-xl;
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: vars.$spacing-md;
+
+    .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      border-radius: vars.$border-radius-md;
+      background-color: vars.$color-primary;
+      color: vars.$color-on-primary;
+      font: vars.$font-title-medium;
+      font-weight: 600;
+    }
+
+    .brand-name {
+      font: vars.$font-title-medium;
+      color: vars.$color-on-background;
+      font-weight: 600;
+    }
+  }
+
+  .topbar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: vars.$spacing-xs;
+    color: vars.$color-on-surface-variant;
+  }
+}
+
+.menu-icon-spacer {
+  visibility: hidden;
+}
+
+// ---- Content -------------------------------------------------------------
+.auth-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: vars.$spacing-lg;
-  background-color: vars.$color-background;
+  gap: vars.$spacing-xl;
+  padding: vars.$spacing-xl;
+}
 
-  .auth-card {
-    width: 100%;
-    max-width: 480px;
-    background-color: vars.$color-surface;
-    border-radius: vars.$border-radius-lg;
-    box-shadow: vars.$shadow-2;
+.auth-card {
+  width: 100%;
+  max-width: 26rem;
+  padding: vars.$spacing-xxl;
+  border-radius: vars.$border-radius-lg;
+  background-color: vars.$color-surface;
+  animation: auth-card-in vars.$transition-normal cubic-bezier(0.4, 0, 0.2, 1);
 
-    mat-card-header {
-      padding: vars.$spacing-xl;
-      border-bottom: 1px solid vars.$color-outline-variant;
-
-      .header-content {
-        width: 100%;
-        text-align: center;
-
-        .app-icon {
-          font-size: 48px;
-          width: 48px;
-          height: 48px;
-          color: vars.$color-primary;
-          margin-bottom: vars.$spacing-md;
-        }
-
-        mat-card-title {
-          font: vars.$font-headline-medium;
-          color: vars.$color-on-surface;
-          margin-bottom: vars.$spacing-sm;
-        }
-
-        mat-card-subtitle {
-          font: vars.$font-body-medium;
-          color: vars.$color-on-surface-variant;
-        }
-      }
-    }
-
-    mat-card-content {
-      padding: vars.$spacing-xl;
-
-      .auth-form {
-        display: flex;
-        flex-direction: column;
-        gap: vars.$spacing-lg;
-
-        .phone-field-full,
-        .full-width {
-          width: 100%;
-        }
-
-        .recaptcha-container {
-          display: flex;
-          justify-content: center;
-          margin: vars.$spacing-lg 0;
-        }
-
-        .otp-info {
-          display: flex;
-          align-items: center;
-          gap: vars.$spacing-md;
-          padding: vars.$spacing-md;
-          background-color: vars.$color-surface-container-low;
-          border-radius: vars.$border-radius-md;
-          color: vars.$color-on-surface-variant;
-
-          mat-icon {
-            color: vars.$color-primary;
-          }
-
-          p {
-            margin: 0;
-            font: vars.$font-body-medium;
-          }
-        }
-
-        .error-message {
-          display: flex;
-          align-items: center;
-          gap: vars.$spacing-sm;
-          padding: vars.$spacing-md;
-          background-color: rgba(vars.$color-error, 0.1);
-          border-radius: vars.$border-radius-md;
-          color: vars.$color-error;
-          font: vars.$font-body-small;
-
-          mat-icon {
-            font-size: 20px;
-            width: 20px;
-            height: 20px;
-          }
-        }
-
-        .submit-button {
-          width: 100%;
-          height: 48px;
-          font: vars.$font-label-large;
-          transition: vars.$transition-standard;
-
-          .button-spinner {
-            display: inline-block;
-            margin-right: vars.$spacing-sm;
-          }
-        }
-
-        .otp-actions {
-          display: flex;
-          flex-direction: column;
-          gap: vars.$spacing-md;
-
-          .resend-section {
-            text-align: center;
-
-            .countdown-text {
-              margin: 0;
-              font: vars.$font-body-small;
-              color: vars.$color-on-surface-variant;
-            }
-          }
-
-          .back-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: vars.$spacing-sm;
-
-            mat-icon {
-              font-size: 20px;
-              width: 20px;
-              height: 20px;
-            }
-          }
-        }
-      }
-
-      .success-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: vars.$spacing-lg;
-        padding: vars.$spacing-xxl 0;
-        text-align: center;
-
-        .success-icon {
-          font-size: 64px;
-          width: 64px;
-          height: 64px;
-          color: vars.$color-success;
-        }
-
-        h2 {
-          font: vars.$font-headline-small;
-          color: vars.$color-on-surface;
-          margin: 0;
-        }
-
-        p {
-          font: vars.$font-body-medium;
-          color: vars.$color-on-surface-variant;
-          margin: 0;
-        }
-      }
-
-      /* Desktop authentication UI */
-      .desktop-auth-success {
-        display: flex;
-        flex-direction: column;
-        gap: vars.$spacing-xl;
-
-        .desktop-status-section {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: vars.$spacing-lg;
-          padding: vars.$spacing-xl;
-          text-align: center;
-
-          .desktop-icon {
-            font-size: 64px;
-            width: 64px;
-            height: 64px;
-            color: vars.$color-primary;
-          }
-
-          h2 {
-            font: vars.$font-headline-small;
-            color: vars.$color-on-surface;
-            margin: 0;
-          }
-
-          .status-text {
-            font: vars.$font-body-large;
-            color: vars.$color-on-surface;
-            margin: 0;
-          }
-
-          mat-spinner {
-            margin: vars.$spacing-md 0;
-          }
-
-          .help-text {
-            font: vars.$font-body-medium;
-            color: vars.$color-on-surface-variant;
-            margin: 0;
-          }
-        }
-
-        .manual-copy-section {
-          display: flex;
-          flex-direction: column;
-          gap: vars.$spacing-lg;
-          padding: vars.$spacing-lg;
-
-          h3 {
-            font: vars.$font-title-large;
-            color: vars.$color-on-surface;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: vars.$spacing-sm;
-          }
-
-          .section-subtitle {
-            font: vars.$font-body-medium;
-            color: vars.$color-on-surface-variant;
-            margin: 0;
-          }
-
-          .instructions-section {
-            margin-top: vars.$spacing-md;
-
-            .instructions-title {
-              font: vars.$font-label-large;
-              color: vars.$color-on-surface;
-              margin-bottom: vars.$spacing-md;
-            }
-
-            .instructions-list {
-              padding-left: vars.$spacing-xl;
-              margin: 0;
-
-              li {
-                font: vars.$font-body-medium;
-                color: vars.$color-on-surface-variant;
-                margin-bottom: vars.$spacing-sm;
-                line-height: 1.5;
-              }
-            }
-          }
-
-          .tokens-field {
-            width: 100%;
-            margin-top: vars.$spacing-lg;
-
-            .monospace-text {
-              font-family: 'Courier New', Courier, monospace;
-              font-size: 12px;
-              line-height: 1.5;
-              color: vars.$color-on-surface;
-            }
-          }
-
-          .button-row {
-            display: flex;
-            gap: vars.$spacing-md;
-            margin-top: vars.$spacing-md;
-
-            .copy-button {
-              flex: 1;
-              height: 48px;
-              font: vars.$font-label-large;
-            }
-          }
-
-          .success-chips {
-            margin-top: vars.$spacing-md;
-
-            mat-chip {
-              background-color: vars.$color-success;
-              color: white;
-            }
-          }
-        }
-      }
-    }
+  @include theme.mobile {
+    padding: vars.$spacing-xl;
   }
+}
 
-  .footer-info {
-    display: flex;
-    align-items: flex-start;
-    gap: vars.$spacing-md;
-    max-width: 480px;
-    margin-top: vars.$spacing-xl;
-    padding: vars.$spacing-md;
-    color: vars.$color-on-surface-variant;
+.auth-card-header {
+  @include theme.flex-column-center;
+  text-align: center;
+  gap: vars.$spacing-md;
+  margin-bottom: vars.$spacing-xl;
+
+  .header-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: vars.$border-radius-round;
+    background-color: vars.$color-primary-container;
+    color: vars.$color-on-primary-container;
 
     mat-icon {
-      flex-shrink: 0;
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
-      margin-top: 2px;
+      font-size: 1.75rem;
+      width: 1.75rem;
+      height: 1.75rem;
     }
+  }
 
-    p {
-      margin: 0;
-      font: vars.$font-body-small;
-      text-align: left;
+  .auth-title {
+    margin: 0;
+    font: vars.$font-headline-small;
+    color: vars.$color-on-surface;
+  }
+
+  .auth-subtitle {
+    margin: 0;
+    font: vars.$font-body-medium;
+    color: vars.$color-on-surface-variant;
+  }
+}
+
+.auth-card-content {
+  padding: 0;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$spacing-lg;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.recaptcha-container {
+  display: flex;
+  justify-content: center;
+
+  &:empty {
+    display: none;
+  }
+}
+
+.submit-button {
+  width: 100%;
+  height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: vars.$spacing-md;
+  font: vars.$font-label-large;
+}
+
+// ---- OTP step ------------------------------------------------------------
+.otp-target {
+  @include theme.flex-center;
+  gap: vars.$spacing-md;
+  margin: 0;
+  padding: vars.$spacing-md vars.$spacing-lg;
+  border-radius: vars.$border-radius-md;
+  background-color: vars.$color-surface-container;
+  color: vars.$color-on-surface-variant;
+  font: vars.$font-body-medium;
+
+  mat-icon {
+    color: vars.$color-primary;
+  }
+}
+
+.otp-input {
+  letter-spacing: 0.5em;
+  font-weight: 600;
+}
+
+.otp-secondary-actions {
+  @include theme.flex-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: vars.$spacing-sm;
+
+  .countdown-text {
+    font: vars.$font-body-small;
+    color: vars.$color-on-surface-variant;
+  }
+}
+
+// ---- Success step --------------------------------------------------------
+.success-block {
+  @include theme.flex-column-center;
+  gap: vars.$spacing-lg;
+  text-align: center;
+
+  .success-message {
+    margin: 0;
+    font: vars.$font-body-medium;
+    color: vars.$color-on-surface-variant;
+  }
+
+  .deep-link-help {
+    margin: 0;
+    font: vars.$font-body-small;
+    color: vars.$color-on-surface-variant;
+  }
+
+  mat-divider {
+    width: 100%;
+  }
+
+  .tokens-field {
+    width: 100%;
+
+    .tokens-text {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.75rem;
     }
   }
 }
 
-// Responsive styles
-@include theme.mobile {
-  .firebase-auth-container {
-    padding: vars.$spacing-md;
+// ---- Error banner --------------------------------------------------------
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: vars.$spacing-md;
+  padding: vars.$spacing-md vars.$spacing-lg;
+  border-radius: vars.$border-radius-md;
+  background-color: vars.$color-error-container;
+  color: vars.$color-on-error-container;
+  font: vars.$font-body-small;
 
-    .auth-card {
-      mat-card-header {
-        padding: vars.$spacing-lg;
-
-        .header-content {
-          .app-icon {
-            font-size: 40px;
-            width: 40px;
-            height: 40px;
-          }
-        }
-      }
-
-      mat-card-content {
-        padding: vars.$spacing-lg;
-
-        .desktop-auth-success {
-          .desktop-status-section {
-            padding: vars.$spacing-md;
-
-            .desktop-icon {
-              font-size: 48px;
-              width: 48px;
-              height: 48px;
-            }
-          }
-
-          .manual-copy-section {
-            padding: vars.$spacing-md;
-
-            .instructions-section {
-              .instructions-list {
-                padding-left: vars.$spacing-lg;
-
-                li {
-                  font: vars.$font-body-small;
-                }
-              }
-            }
-
-            .tokens-field {
-              .monospace-text {
-                font-size: 10px;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    .footer-info {
-      padding: vars.$spacing-sm;
-    }
+  mat-icon {
+    flex-shrink: 0;
   }
 }
 
-// Custom snackbar styles
-::ng-deep {
-  .success-snackbar {
-    background-color: vars.$color-success;
-    color: white;
-  }
+// ---- Footer --------------------------------------------------------------
+.auth-footer {
+  @include theme.flex-center;
+  gap: vars.$spacing-sm;
+  max-width: 26rem;
+  text-align: center;
+  color: vars.$color-on-surface-variant;
+  font: vars.$font-body-small;
 
-  .error-snackbar {
-    background-color: vars.$color-error;
-    color: white;
+  mat-icon {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+}
+
+@keyframes auth-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

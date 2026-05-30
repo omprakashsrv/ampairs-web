@@ -1,0 +1,83 @@
+{
+  "app": {
+    "name": "Ampairs",
+    "tagline": "Secure sign-in"
+  },
+  "common": {
+    "close": "Close",
+    "back": "Back"
+  },
+  "language": {
+    "label": "Language",
+    "select": "Select language"
+  },
+  "theme": {
+    "toggle": "Switch theme",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "auth": {
+    "title": "Sign in with phone",
+    "subtitle": {
+      "phone": "Enter your phone number to continue",
+      "otp": "Enter the code we sent to your phone",
+      "success": "You're signed in"
+    },
+    "phone": {
+      "label": "Phone number",
+      "placeholder": "9876543210",
+      "hint": "We'll text you a one-time verification code",
+      "errors": {
+        "required": "Phone number is required",
+        "pattern": "Enter a valid 10-digit Indian mobile number"
+      },
+      "send": "Send code",
+      "sending": "Sending code…"
+    },
+    "otp": {
+      "sentTo": "Code sent to {{phone}}",
+      "label": "Verification code",
+      "placeholder": "000000",
+      "errors": {
+        "required": "Verification code is required",
+        "pattern": "The code must be 6 digits"
+      },
+      "verify": "Verify & continue",
+      "verifying": "Verifying…",
+      "resendIn": "Resend code in {{seconds}}s",
+      "resend": "Resend code",
+      "changeNumber": "Change phone number"
+    },
+    "success": {
+      "title": "Authentication successful",
+      "message": "Connecting you to the Ampairs app…",
+      "openApp": "Open the app",
+      "deepLinkHelp": "If the app didn't open automatically, use the button above or copy your tokens below.",
+      "tokensLabel": "Authentication tokens (JSON)",
+      "tokensHint": "Copy this and paste it into the app",
+      "copy": "Copy tokens",
+      "copied": "Copied!"
+    },
+    "messages": {
+      "otpSent": "Verification code sent",
+      "otpSendFailed": "Couldn't send the code. Please try again.",
+      "authSuccess": "Authentication successful!",
+      "invalidOtp": "Invalid verification code",
+      "tokensCopied": "Tokens copied. Paste them into the app.",
+      "copyFailed": "Couldn't copy. Please select and copy manually."
+    },
+    "firebaseErrors": {
+      "invalidPhone": "Invalid phone number. Please check and try again.",
+      "missingPhone": "Phone number is required.",
+      "tooManyRequests": "Too many attempts. Please try again later.",
+      "invalidCode": "Invalid code. Please check and try again.",
+      "codeExpired": "The code has expired. Please request a new one.",
+      "captchaFailed": "reCAPTCHA verification failed. Please try again.",
+      "recaptchaExpired": "reCAPTCHA expired. Please try again.",
+      "recaptchaInit": "Couldn't initialise reCAPTCHA. Please reload the page.",
+      "generic": "Something went wrong during authentication. Please try again."
+    },
+    "footer": "Secured by Firebase. Your information is encrypted and protected."
+  }
+}

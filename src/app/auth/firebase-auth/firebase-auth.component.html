@@ -1,234 +1,220 @@
-<div class="firebase-auth-container">
-  <mat-card class="auth-card">
-    <mat-card-header>
-      <div class="header-content">
-        <mat-icon class="app-icon">security</mat-icon>
-        <mat-card-title>Sign In with Phone</mat-card-title>
-        <mat-card-subtitle>
-          @if (step() === 'phone') {
-            Enter your phone number to authenticate
-          } @else if (step() === 'otp') {
-            Enter the verification code sent to your phone
-          } @else {
-            Authentication successful!
-          }
-        </mat-card-subtitle>
-      </div>
-    </mat-card-header>
+<div class="auth-page">
+  <!-- Top bar: brand + language + theme controls -->
+  <header class="auth-topbar">
+    <div class="brand">
+      <span class="brand-mark">A</span>
+      <span class="brand-name">{{ 'app.name' | translate }}</span>
+    </div>
 
-    <mat-card-content>
-      <!-- Phone Number Step -->
-      @if (step() === 'phone') {
-        <form [formGroup]="phoneForm" (ngSubmit)="onSendOTP()" class="auth-form">
-          <mat-form-field appearance="outline" class="phone-field-full">
-            <mat-label>Phone Number (India)</mat-label>
-            <span matTextPrefix>+91 &nbsp;</span>
-            <input
-              matInput
-              type="tel"
-              formControlName="phone"
-              placeholder="9876543210"
-              maxlength="10"
-            />
-            @if (phoneForm.get('phone')?.hasError('required') && phoneForm.get('phone')?.touched) {
-              <mat-error>Phone number is required</mat-error>
-            }
-            @if (phoneForm.get('phone')?.hasError('pattern')) {
-              <mat-error>Invalid phone number format</mat-error>
-            }
-          </mat-form-field>
-
-          <!-- reCAPTCHA Container -->
-          <div id="recaptcha-container" class="recaptcha-container"></div>
-
-          @if (firebaseAuthService.error()) {
-            <div class="error-message">
-              <mat-icon>error_outline</mat-icon>
-              <span>{{ firebaseAuthService.error() }}</span>
-            </div>
-          }
-
-          <button
-            mat-raised-button
-            color="primary"
-            type="submit"
-            class="submit-button"
-            [disabled]="phoneForm.invalid || firebaseAuthService.loading()"
-          >
-            @if (firebaseAuthService.loading()) {
-              <mat-spinner diameter="20" class="button-spinner"></mat-spinner>
-              <span>Sending OTP...</span>
+    <div class="topbar-actions">
+      <button
+        mat-icon-button
+        [matMenuTriggerFor]="langMenu"
+        [matTooltip]="'language.select' | translate"
+        aria-label="Select language">
+        <mat-icon>language</mat-icon>
+      </button>
+      <mat-menu #langMenu="matMenu">
+        @for (lang of language.availableLanguages; track lang.code) {
+          <button mat-menu-item (click)="switchLanguage(lang.code)">
+            @if (language.current() === lang.code) {
+              <mat-icon>check</mat-icon>
             } @else {
-              <span>Send OTP</span>
+              <mat-icon class="menu-icon-spacer"></mat-icon>
             }
+            <span>{{ lang.nativeLabel }}</span>
           </button>
-        </form>
-      }
+        }
+      </mat-menu>
 
-      <!-- OTP Verification Step -->
-      @if (step() === 'otp') {
-        <form [formGroup]="otpForm" (ngSubmit)="onVerifyOTP()" class="auth-form">
-          <div class="otp-info">
-            <mat-icon>phone_android</mat-icon>
-            <p>OTP sent to {{ maskedPhone() }}</p>
-          </div>
+      <button
+        mat-icon-button
+        (click)="cycleTheme()"
+        [matTooltip]="'theme.toggle' | translate"
+        aria-label="Switch theme">
+        <mat-icon>{{ themeIcon() }}</mat-icon>
+      </button>
+    </div>
+  </header>
 
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Enter OTP</mat-label>
-            <input
-              matInput
-              type="text"
-              formControlName="otp"
-              placeholder="000000"
-              maxlength="6"
-              autocomplete="one-time-code"
-              inputmode="numeric"
-            />
-            @if (otpForm.get('otp')?.hasError('required') && otpForm.get('otp')?.touched) {
-              <mat-error>OTP is required</mat-error>
+  <main class="auth-content">
+    <mat-card class="auth-card" appearance="outlined">
+      <div class="auth-card-header">
+        <div class="header-icon">
+          <mat-icon>
+            @switch (step()) {
+              @case ('success') {
+                check_circle
+              }
+              @default {
+                lock
+              }
             }
-            @if (otpForm.get('otp')?.hasError('pattern')) {
-              <mat-error>OTP must be 6 digits</mat-error>
+          </mat-icon>
+        </div>
+        <h1 class="auth-title">{{ 'auth.title' | translate }}</h1>
+        <p class="auth-subtitle">
+          @switch (step()) {
+            @case ('phone') {
+              {{ 'auth.subtitle.phone' | translate }}
             }
-          </mat-form-field>
-
-          @if (firebaseAuthService.error()) {
-            <div class="error-message">
-              <mat-icon>error_outline</mat-icon>
-              <span>{{ firebaseAuthService.error() }}</span>
-            </div>
+            @case ('otp') {
+              {{ 'auth.subtitle.otp' | translate }}
+            }
+            @case ('success') {
+              {{ 'auth.subtitle.success' | translate }}
+            }
           }
+        </p>
+      </div>
 
-          <div class="otp-actions">
-            <button
-              mat-raised-button
-              color="primary"
-              type="submit"
-              class="submit-button"
-              [disabled]="otpForm.invalid || firebaseAuthService.loading()"
-            >
-              @if (firebaseAuthService.loading()) {
-                <mat-spinner diameter="20" class="button-spinner"></mat-spinner>
-                <span>Verifying...</span>
-              } @else {
-                <span>Verify OTP</span>
-              }
-            </button>
-
-            <div class="resend-section">
-              @if (countdown() > 0) {
-                <p class="countdown-text">Resend OTP in {{ countdown() }}s</p>
-              } @else {
-                <button
-                  mat-button
-                  color="primary"
-                  type="button"
-                  (click)="onResendOTP()"
-                >
-                  Resend OTP
-                </button>
-              }
-            </div>
-
-            <button
-              mat-button
-              type="button"
-              (click)="onBackToPhone()"
-              class="back-button"
-            >
-              <mat-icon>arrow_back</mat-icon>
-              Change Phone Number
-            </button>
-          </div>
-        </form>
-      }
-
-      <!-- Success Step - Desktop Client -->
-      @if (step() === 'success' && isDesktopClient()) {
-        <div class="desktop-auth-success">
-          <!-- Primary: Automatic redirect status -->
-          <div class="desktop-status-section">
-            <mat-icon class="desktop-icon">desktop_windows</mat-icon>
-            <h2>Desktop Authentication Successful</h2>
-            <p class="status-text">Connecting to desktop app...</p>
-            <mat-spinner diameter="40"></mat-spinner>
-            <p class="help-text">
-              If the app doesn't open in 5 seconds, use the manual option below.
-            </p>
-          </div>
-
-          <mat-divider></mat-divider>
-
-          <!-- Fallback: Manual token copy -->
-          <div class="manual-copy-section">
-            <h3>
-              <mat-icon style="vertical-align: middle;">content_paste</mat-icon>
-              Alternative: Copy Tokens Manually
-            </h3>
-            <p class="section-subtitle">
-              If your browser doesn't support automatic redirect
-            </p>
-
-            <div class="instructions-section">
-              <p class="instructions-title">How to complete authentication:</p>
-              <ol class="instructions-list">
-                <li>Click the "Copy Tokens" button below</li>
-                <li>Go back to the desktop app</li>
-                <li>Click "Browser doesn't support deep links? Paste tokens here"</li>
-                <li>Paste the tokens in the text field</li>
-                <li>Click "Sign In"</li>
-              </ol>
-            </div>
-
-            <mat-form-field appearance="outline" class="tokens-field">
-              <mat-label>Authentication Tokens (JSON)</mat-label>
-              <textarea
+      <mat-card-content class="auth-card-content">
+        <!-- Step 1: Phone number -->
+        @if (step() === 'phone') {
+          <form [formGroup]="phoneForm" (ngSubmit)="onSendOTP()" class="auth-form">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'auth.phone.label' | translate }}</mat-label>
+              <span matTextPrefix>+91&nbsp;</span>
+              <input
                 matInput
-                [value]="tokensJson()"
-                readonly
-                rows="8"
-                class="monospace-text">
-              </textarea>
-              <mat-hint>Copy this entire JSON object</mat-hint>
+                type="tel"
+                inputmode="numeric"
+                formControlName="phone"
+                [placeholder]="'auth.phone.placeholder' | translate"
+                maxlength="10"
+                autocomplete="tel-national"/>
+              <mat-icon matSuffix>smartphone</mat-icon>
+              <mat-hint>{{ 'auth.phone.hint' | translate }}</mat-hint>
+              @if (phoneForm.get('phone')?.hasError('required') && phoneForm.get('phone')?.touched) {
+                <mat-error>{{ 'auth.phone.errors.required' | translate }}</mat-error>
+              }
+              @if (phoneForm.get('phone')?.hasError('pattern')) {
+                <mat-error>{{ 'auth.phone.errors.pattern' | translate }}</mat-error>
+              }
             </mat-form-field>
 
-            <div class="button-row">
-              <button
-                mat-raised-button
-                color="primary"
-                (click)="copyTokensToClipboard()"
-                class="copy-button">
-                <mat-icon style="vertical-align: middle;">content_copy</mat-icon>
-                {{ tokensCopied() ? 'Copied!' : 'Copy Tokens' }}
+            <div id="recaptcha-container" class="recaptcha-container"></div>
+
+            @if (firebaseAuthService.error()) {
+              <div class="error-banner" role="alert">
+                <mat-icon>error_outline</mat-icon>
+                <span>{{ firebaseAuthService.error()! | translate }}</span>
+              </div>
+            }
+
+            <button
+              mat-flat-button
+              type="submit"
+              class="submit-button"
+              [disabled]="phoneForm.invalid || firebaseAuthService.loading()">
+              @if (firebaseAuthService.loading()) {
+                <mat-spinner diameter="20"></mat-spinner>
+                <span>{{ 'auth.phone.sending' | translate }}</span>
+              } @else {
+                <span>{{ 'auth.phone.send' | translate }}</span>
+              }
+            </button>
+          </form>
+        }
+
+        <!-- Step 2: OTP verification -->
+        @if (step() === 'otp') {
+          <form [formGroup]="otpForm" (ngSubmit)="onVerifyOTP()" class="auth-form">
+            <p class="otp-target">
+              <mat-icon>sms</mat-icon>
+              <span>{{ 'auth.otp.sentTo' | translate:{ phone: maskedPhone() } }}</span>
+            </p>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'auth.otp.label' | translate }}</mat-label>
+              <input
+                matInput
+                type="text"
+                formControlName="otp"
+                [placeholder]="'auth.otp.placeholder' | translate"
+                maxlength="6"
+                autocomplete="one-time-code"
+                inputmode="numeric"
+                class="otp-input"/>
+              @if (otpForm.get('otp')?.hasError('required') && otpForm.get('otp')?.touched) {
+                <mat-error>{{ 'auth.otp.errors.required' | translate }}</mat-error>
+              }
+              @if (otpForm.get('otp')?.hasError('pattern')) {
+                <mat-error>{{ 'auth.otp.errors.pattern' | translate }}</mat-error>
+              }
+            </mat-form-field>
+
+            @if (firebaseAuthService.error()) {
+              <div class="error-banner" role="alert">
+                <mat-icon>error_outline</mat-icon>
+                <span>{{ firebaseAuthService.error()! | translate }}</span>
+              </div>
+            }
+
+            <button
+              mat-flat-button
+              type="submit"
+              class="submit-button"
+              [disabled]="otpForm.invalid || firebaseAuthService.loading()">
+              @if (firebaseAuthService.loading()) {
+                <mat-spinner diameter="20"></mat-spinner>
+                <span>{{ 'auth.otp.verifying' | translate }}</span>
+              } @else {
+                <span>{{ 'auth.otp.verify' | translate }}</span>
+              }
+            </button>
+
+            <div class="otp-secondary-actions">
+              @if (countdown() > 0) {
+                <span class="countdown-text">
+                  {{ 'auth.otp.resendIn' | translate:{ seconds: countdown() } }}
+                </span>
+              } @else {
+                <button mat-button type="button" (click)="onResendOTP()">
+                  {{ 'auth.otp.resend' | translate }}
+                </button>
+              }
+              <button mat-button type="button" (click)="onBackToPhone()">
+                <mat-icon>arrow_back</mat-icon>
+                {{ 'auth.otp.changeNumber' | translate }}
               </button>
             </div>
+          </form>
+        }
 
-            @if (tokensCopied()) {
-              <mat-chip-set class="success-chips">
-                <mat-chip highlighted>
-                  <mat-icon style="vertical-align: middle;">check_circle</mat-icon>
-                  Tokens copied successfully!
-                </mat-chip>
-              </mat-chip-set>
-            }
+        <!-- Step 3: Success / token handoff -->
+        @if (step() === 'success') {
+          <div class="success-block">
+            <p class="success-message">{{ 'auth.success.message' | translate }}</p>
+            <mat-spinner diameter="36"></mat-spinner>
+
+            <button mat-flat-button class="submit-button" (click)="openApp()">
+              <mat-icon>open_in_new</mat-icon>
+              <span>{{ 'auth.success.openApp' | translate }}</span>
+            </button>
+
+            <p class="deep-link-help">{{ 'auth.success.deepLinkHelp' | translate }}</p>
+
+            <mat-divider></mat-divider>
+
+            <mat-form-field appearance="outline" class="full-width tokens-field">
+              <mat-label>{{ 'auth.success.tokensLabel' | translate }}</mat-label>
+              <textarea matInput [value]="tokensJson()" readonly rows="6" class="tokens-text"></textarea>
+              <mat-hint>{{ 'auth.success.tokensHint' | translate }}</mat-hint>
+            </mat-form-field>
+
+            <button mat-stroked-button class="submit-button" (click)="copyTokens()">
+              <mat-icon>{{ tokensCopied() ? 'check' : 'content_copy' }}</mat-icon>
+              <span>{{ (tokensCopied() ? 'auth.success.copied' : 'auth.success.copy') | translate }}</span>
+            </button>
           </div>
-        </div>
-      }
+        }
+      </mat-card-content>
+    </mat-card>
 
-      <!-- Success Step - Normal Web Flow -->
-      @if (step() === 'success' && !isDesktopClient()) {
-        <div class="success-content">
-          <mat-icon class="success-icon">check_circle</mat-icon>
-          <h2>Authentication Successful!</h2>
-          <p>Redirecting...</p>
-          <mat-spinner diameter="40"></mat-spinner>
-        </div>
-      }
-    </mat-card-content>
-  </mat-card>
-
-  <div class="footer-info">
-    <mat-icon>info_outline</mat-icon>
-    <p>Secure authentication powered by Firebase. Your credentials are encrypted and protected.</p>
-  </div>
+    <footer class="auth-footer">
+      <mat-icon>verified_user</mat-icon>
+      <span>{{ 'auth.footer' | translate }}</span>
+    </footer>
+  </main>
 </div>

@@ -1,5 +1,20 @@
  Angular Application Architecture & Patterns
 
+  > ## Current Scope (Auth Gateway)
+  > This project has been reduced to a **single-purpose authentication gateway**.
+  > It exposes only the Firebase phone-OTP login flow (`/login`); all workspace,
+  > module, dashboard, member and role screens have been removed.
+  > - **Angular 21** (standalone, signals, `@if`/`@for`/`@switch`).
+  > - **Material Design 3** theming (see `src/theme/`, `ThemeService`).
+  > - **Runtime i18n** via `@ngx-translate/core`. Translation files live in
+  >   `public/i18n/{lang}.json`; `LanguageService` manages the active language
+  >   (currently `en` + `hi`) and persists it to `localStorage`.
+  > - After successful auth the app hands JWT tokens off to the native/desktop
+  >   app via a deep link (`environment.deepLink`) with a manual copy fallback.
+  >
+  > Many sections below describe the former multi-tenant platform and are kept
+  > for reference only — the M3 / signals / SCSS-token conventions still apply.
+
   Application Structure
 
   The Angular application follows a modern standalone component architecture with clear separation of concerns:
